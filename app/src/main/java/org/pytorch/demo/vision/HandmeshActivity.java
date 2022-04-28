@@ -109,6 +109,7 @@ public class HandmeshActivity extends AbstractCameraXActivity<HandmeshActivity.A
 
         mDotContainer = findViewById(R.id.flt_dot_container);
         mIvSecondImage = findViewById(R.id.iv_show_second);
+
         mResultRowViews[0] = findViewById(R.id.image_classification_top1_result_row);
         mResultRowViews[1] = findViewById(R.id.image_classification_top2_result_row);
         mResultRowViews[2] = findViewById(R.id.image_classification_top3_result_row);
@@ -205,31 +206,33 @@ public class HandmeshActivity extends AbstractCameraXActivity<HandmeshActivity.A
             YuvToRgbConverter converter = new YuvToRgbConverter(this);
             converter.yuvToRgb(frame, bitmap);
 
+            int cropSize = (int) Math.min(frame_height, frame_width);
 
+            // 压缩成128 * 128, 模型接收的是128*128
+            // Bitmap cropBitmap = cropBitmap(bitmap, 128);
+            Bitmap cropBitmap = Bitmap.createBitmap(bitmap, 0, 0, cropSize, cropSize);
             runOnUiThread(() -> {
-                mIvOrigin.setImageBitmap(bitmap);
-                mIvSecondImage.setImageBitmap(bitmap);
-
+                mIvOrigin.setImageBitmap(cropBitmap);
+                mIvSecondImage.setImageBitmap(cropBitmap);
             });
-
 
             Log.d("test_module",
                     "image , width:" + String.valueOf(frame_width) + ", heigh: " + frame_height +
-                            ", bitmapImage width:" + bitmap.getWidth() + ", height:" + bitmap.getHeight());
-            // 压缩成128 * 128, 模型接收的是128*128
-//            Bitmap cropBitmap = cropBitmap(bitmap, 128);
-//            TensorImageUtils.bitmapToFloatBuffer(cropBitmap, 0, 0, INPUT_TENSOR_WIDTH,
-//                    INPUT_TENSOR_HEIGHT,
-//                    TensorImageUtils.TORCHVISION_NORM_MEAN_RGB,
-//                    TensorImageUtils.TORCHVISION_NORM_STD_RGB,
-//                    mInputTensorBuffer, 0);
+                            ", bitmapImage width:" + cropBitmap.getWidth() + ", height:" + cropBitmap.getHeight());
 
-            TensorImageUtils.imageYUV420CenterCropToFloatBuffer(
-                    frame, rotationDegrees,
+            TensorImageUtils.bitmapToFloatBuffer(cropBitmap,
+                    0, 0,
                     INPUT_TENSOR_WIDTH, INPUT_TENSOR_HEIGHT,
                     TensorImageUtils.TORCHVISION_NORM_MEAN_RGB,
                     TensorImageUtils.TORCHVISION_NORM_STD_RGB,
                     mInputTensorBuffer, 0);
+
+//            TensorImageUtils.imageYUV420CenterCropToFloatBuffer(
+//                    frame, rotationDegrees,
+//                    INPUT_TENSOR_WIDTH, INPUT_TENSOR_HEIGHT,
+//                    TensorImageUtils.TORCHVISION_NORM_MEAN_RGB,
+//                    TensorImageUtils.TORCHVISION_NORM_STD_RGB,
+//                    mInputTensorBuffer, 0);
 
             final long moduleForwardStartTime = SystemClock.elapsedRealtime();
 
@@ -271,6 +274,7 @@ public class HandmeshActivity extends AbstractCameraXActivity<HandmeshActivity.A
                 dots.add(new Dot(x, y));
 
             }
+
             runOnUiThread(() -> {
                 mDotContainer.removeAllViews();
             });
