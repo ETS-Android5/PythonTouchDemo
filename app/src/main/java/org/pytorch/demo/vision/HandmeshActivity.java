@@ -2,10 +2,6 @@ package org.pytorch.demo.vision;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Camera;
-import android.graphics.ImageFormat;
-import android.graphics.Rect;
-import android.graphics.YuvImage;
 import android.media.Image;
 import android.os.Build;
 import android.os.Bundle;
@@ -34,18 +30,14 @@ import org.pytorch.demo.Constants;
 import org.pytorch.demo.R;
 import org.pytorch.demo.Utils;
 import org.pytorch.demo.vision.utils.Dot;
-import org.pytorch.demo.vision.utils.DotView;
+import org.pytorch.demo.vision.view.DotView;
 import org.pytorch.demo.vision.utils.YuvToRgbConverter;
 import org.pytorch.demo.vision.view.ResultRowView;
 import org.pytorch.torchvision.TensorImageUtils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,7 +47,6 @@ import java.util.Queue;
 import java.lang.String;
 import java.lang.Math;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class HandmeshActivity extends AbstractCameraXActivity<HandmeshActivity.AnalysisResult> {
 
@@ -72,7 +63,6 @@ public class HandmeshActivity extends AbstractCameraXActivity<HandmeshActivity.A
     private ImageView mIvOrigin;
     private ImageView mIvSecondImage;
     private FrameLayout mDotContainer;
-    private TextureView mLeftView;
     private ExecutorService mExecutorService;
     private boolean mAnalyzeImageErrorState;
     private ResultRowView[] mResultRowViews = new ResultRowView[TOP_K];
@@ -105,12 +95,6 @@ public class HandmeshActivity extends AbstractCameraXActivity<HandmeshActivity.A
         return ((ViewStub) findViewById(R.id.image_classification_texture_view_stub))
                 .inflate()
                 .findViewById(R.id.image_classification_texture_view);
-    }
-
-    protected TextureView getLeftPreviewTextureView() {
-
-        mLeftView = findViewById(R.id.iv_left_textureview);
-        return mLeftView;
     }
 
     @Override
@@ -219,36 +203,36 @@ public class HandmeshActivity extends AbstractCameraXActivity<HandmeshActivity.A
             Bitmap bitmap = Bitmap.createBitmap(image.getWidth(), image.getHeight(),
                     Bitmap.Config.ARGB_4444);
             YuvToRgbConverter converter = new YuvToRgbConverter(this);
-            converter.yuvToRgb(image.getImage(), bitmap);
-            // 1，裁剪图片，输出 128*128： 对照相机的图片进行裁剪
+            converter.yuvToRgb(frame, bitmap);
+
+
             runOnUiThread(() -> {
                 mIvOrigin.setImageBitmap(bitmap);
                 mIvSecondImage.setImageBitmap(bitmap);
 
             });
-//
+
+
             Log.d("test_module",
                     "image , width:" + String.valueOf(frame_width) + ", heigh: " + frame_height +
                             ", bitmapImage width:" + bitmap.getWidth() + ", height:" + bitmap.getHeight());
             // 压缩成128 * 128, 模型接收的是128*128
-            Bitmap cropBitmap = cropBitmap(bitmap, 128);
-//            image.setCropRect(new Rect(0,0,));
-//
-            TensorImageUtils.bitmapToFloatBuffer(cropBitmap, 0, 0, 128, 128,
-                    TensorImageUtils.TORCHVISION_NORM_MEAN_RGB,
-                    TensorImageUtils.TORCHVISION_NORM_STD_RGB,
-                    mInputTensorBuffer, 0);
-//
-//            TensorImageUtils.imageYUV420CenterCropToFloatBuffer(
-//                    frame, rotationDegrees,
-//                    INPUT_TENSOR_WIDTH, INPUT_TENSOR_HEIGHT,
+//            Bitmap cropBitmap = cropBitmap(bitmap, 128);
+//            TensorImageUtils.bitmapToFloatBuffer(cropBitmap, 0, 0, INPUT_TENSOR_WIDTH,
+//                    INPUT_TENSOR_HEIGHT,
 //                    TensorImageUtils.TORCHVISION_NORM_MEAN_RGB,
 //                    TensorImageUtils.TORCHVISION_NORM_STD_RGB,
 //                    mInputTensorBuffer, 0);
 
+            TensorImageUtils.imageYUV420CenterCropToFloatBuffer(
+                    frame, rotationDegrees,
+                    INPUT_TENSOR_WIDTH, INPUT_TENSOR_HEIGHT,
+                    TensorImageUtils.TORCHVISION_NORM_MEAN_RGB,
+                    TensorImageUtils.TORCHVISION_NORM_STD_RGB,
+                    mInputTensorBuffer, 0);
+
             final long moduleForwardStartTime = SystemClock.elapsedRealtime();
 
-//     4, 在裁剪的图片上，显示模型输出后的点。需要一个ui界面
             // 模型结果
             Log.d("test_module", "start model >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ");
 
@@ -279,39 +263,26 @@ public class HandmeshActivity extends AbstractCameraXActivity<HandmeshActivity.A
                 }
             }
 
-//            for (int index = 0; index < 4; index++) {
-//                Log.d("test_module",
-//                        "坐标--"+String.valueOf(index) + ": " + String.valueOf
-//                        (pointsArray[index][0] * 224) +
-//                                ", " + String.valueOf(pointsArray[index][1] * 224));
-//            }
             List<Dot> dots = new ArrayList<>();
 
             for (int index = 0; index < pointsArray.length; index++) {
-//                float x = pointsArray[index][0] * 128;
-//                float y = pointsArray[index][1] * 128;
                 float x = pointsArray[index][0];
                 float y = pointsArray[index][1];
-
                 dots.add(new Dot(x, y));
 
             }
             runOnUiThread(() -> {
                 mDotContainer.removeAllViews();
             });
-
+            int width = mDotContainer.getMeasuredWidth();
+            int measuredHeight = mDotContainer.getMeasuredHeight();
             for (Dot dot : dots) {
-                int width = mDotContainer.getMeasuredWidth();
-                int measuredHeight = mDotContainer.getMeasuredHeight();
                 int dotx = (int) (dot.x * width);
                 int doty = (int) (dot.y * measuredHeight);
                 Log.d("test_module:", "坐标点 x: " + dot.x + ", y: " + dot.y + " , dotx:" + dotx
                         + ",doty :" + doty + "， width：" + width + "， measuredHeight：" + measuredHeight);
                 runOnUiThread(() -> {
                     DotView dotView = new DotView(HandmeshActivity.this);
-                    FrameLayout.LayoutParams lp =
-                            new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                                    ViewGroup.LayoutParams.WRAP_CONTENT);
                     dotView.setX(dotx);
                     dotView.setY(doty);
                     mDotContainer.addView(dotView);
@@ -320,24 +291,9 @@ public class HandmeshActivity extends AbstractCameraXActivity<HandmeshActivity.A
 
             }
 
-//            runOnUiThread(()->{
-//                int width = mDotContainer.getMeasuredWidth();
-//                int measuredHeight = mDotContainer.getMeasuredHeight();
-//                int dotx = (int) (dots.get(0).x * width);
-//                int doty = (int) (dots.get(0).y * measuredHeight);
-//                DotView dotView = new DotView(HandmeshActivity.this);
-//                FrameLayout.LayoutParams lp =
-//                        new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-//                        ViewGroup.LayoutParams.WRAP_CONTENT);
-//                dotView.setX(dotx);
-//                dotView.setY(doty);
-//                mDotContainer.addView(dotView);
-//            });
-
             // 如何在图中显示这21个点，点的数值表示的是比例值，比如128*128的图，每个值*128就是像素点位置
             // ???
             // 弄一个小框显示标注21个点之后的图
-
             final long moduleForwardDuration =
                     SystemClock.elapsedRealtime() - moduleForwardStartTime;
 

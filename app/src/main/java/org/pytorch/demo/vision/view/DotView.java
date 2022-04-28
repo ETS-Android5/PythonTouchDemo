@@ -1,4 +1,4 @@
-package org.pytorch.demo.vision.utils;
+package org.pytorch.demo.vision.view;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -11,7 +11,7 @@ import androidx.annotation.Nullable;
 
 public class DotView extends View {
 
-   private static final float RADIUS = 6;
+   private static final float RADIUS = 4;
    private Paint mPaint;
 
    public DotView(Context context) {

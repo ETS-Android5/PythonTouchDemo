@@ -37,9 +37,6 @@ public abstract class AbstractCameraXActivity<R> extends BaseModuleActivity {
 
     protected abstract TextureView getCameraPreviewTextureView();
 
-    protected TextureView getLeftPreviewTextureView() {
-        return null;
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,7 +79,6 @@ public abstract class AbstractCameraXActivity<R> extends BaseModuleActivity {
 
     private void setupCameraX() {
         final TextureView textureView = getCameraPreviewTextureView();
-        final TextureView leftView = getLeftPreviewTextureView();
         final PreviewConfig previewConfig = new PreviewConfig.Builder().build();
         final Preview preview = new Preview(previewConfig);
         preview.setOnPreviewOutputUpdateListener(output -> {
