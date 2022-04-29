@@ -30,6 +30,7 @@ import androidx.core.app.ActivityCompat;
 public abstract class AbstractCameraXActivity<R> extends BaseModuleActivity {
     private static final int REQUEST_CODE_CAMERA_PERMISSION = 200;
     private static final String[] PERMISSIONS = {Manifest.permission.CAMERA};
+    private static final int REFRESH_THRESHOLD = 10; //刷新频率
     protected ExecutorService mExecutorService;
     private long mLastAnalysisResultTime;
 
@@ -84,7 +85,6 @@ public abstract class AbstractCameraXActivity<R> extends BaseModuleActivity {
         preview.setOnPreviewOutputUpdateListener(output -> {
                     SurfaceTexture surfaceTexture = output.getSurfaceTexture();
                     textureView.setSurfaceTexture(surfaceTexture);
-//            leftView.setSurfaceTexture(surfaceTexture);
                 }
         );
 
@@ -101,7 +101,7 @@ public abstract class AbstractCameraXActivity<R> extends BaseModuleActivity {
 
         imageAnalysis.setAnalyzer(
                 (image, rotationDegrees) -> {
-                    if (SystemClock.elapsedRealtime() - mLastAnalysisResultTime < 3000) {
+                    if (SystemClock.elapsedRealtime() - mLastAnalysisResultTime < REFRESH_THRESHOLD) {
                         return;
                     }
 
