@@ -137,11 +137,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintRight_toRightOf="parent">
 
-            <FrameLayout
-                android:id="@+id/flt_dot_container"
-                android:layout_width="128dp"
-                android:layout_height="128dp"
-                android:layout_gravity="left" />
+
 
             <ImageView
                 android:id="@+id/iv_show_second"
@@ -149,19 +145,26 @@
                 android:layout_height="128dp"
                 android:layout_gravity="left"
                 android:rotation="90" />
+
             <ImageView
                 android:id="@+id/iv_show_origin"
                 android:layout_width="128dp"
                 android:layout_height="128dp"
                 android:layout_gravity="right"
                 android:rotation="90" />
+
+            <FrameLayout
+                android:id="@+id/flt_dot_container"
+                android:layout_width="128dp"
+                android:layout_height="128dp"
+                android:layout_gravity="left" />
         </FrameLayout>
 
-        <ImageView
-            android:id="@+id/iv_show_origin_2"
-            android:layout_width="128dp"
-            android:layout_height="128dp"
-            android:rotation="90" />
+        <!--        <ImageView-->
+        <!--            android:id="@+id/iv_show_origin_2"-->
+        <!--            android:layout_width="128dp"-->
+        <!--            android:layout_height="128dp"-->
+        <!--            android:rotation="90" />-->
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 
